@@ -1,0 +1,59 @@
+#include "25lc64.h"
+
+//延时函数
+void DelayNus(uint32_t Nus)
+{
+	uint32_t	i;
+	for(i=0;i<Nus*180;i++)
+	{
+		;
+	}
+}
+
+/*-----------------写一个字节----------------*/
+void eeprom_write_onebyte(unsigned char data,unsigned short usAddr)
+{
+	unsigned char		temp;
+
+	EEPROM_CS_L;
+
+	temp=0x06;				  HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	DelayNus(3);
+	EEPROM_CS_H;
+	DelayNus(3);
+	EEPROM_CS_L;
+	temp=0x02;				  HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	temp=(usAddr >> 8);	HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	temp=(usAddr&0xff);	HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	temp=data;				  HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	DelayNus(3);
+	EEPROM_CS_H;
+	HAL_Delay(10);  //写EEPROM 数据至少需要延时5ms
+}
+
+/*-----------------读一个字节数据----------------*/
+unsigned char eeprom_read_onebyte(unsigned short usAddr)
+{
+	unsigned char data=0;
+	unsigned char	temp;
+	
+	EEPROM_CS_L;
+	temp=0x03;						  HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	temp=(usAddr>>8);				HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	temp=(usAddr&0xff);			HAL_SPI_Transmit(EEPROM_SPI,&temp,1,1000);
+	HAL_SPI_Receive(EEPROM_SPI,&data,1,1000);
+	DelayNus(3);
+	EEPROM_CS_H;
+	DelayNus(3);
+	return(data);
+}
+/*-----------------写多个个字节----------------*/
+void eepron_write_many_byte(void *SrcData,unsigned short Addr,unsigned int DataLen)
+{
+	unsigned char *p = SrcData;
+	int i;
+	for(i=0;i<DataLen;i++)
+	{
+		eeprom_write_onebyte(*(p+i),Addr+i);		
+	}
+}
